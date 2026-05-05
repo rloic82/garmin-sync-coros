@@ -7,7 +7,7 @@ import garth
 
 
 from .garmin_url_dict import GARMIN_URL_DICT
-from ..config import GARMIN_TOKENS_DIR
+from config import GARMIN_TOKENS_DIR
 
 logger = logging.getLogger(__name__)
 
