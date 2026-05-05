@@ -113,9 +113,6 @@ class GarminClient:
                 delay = base_delay * (2 ** attempt)
                 logger.warning(f"Login failed: {e}. Retrying in {delay} seconds...")
                 time.sleep(delay)
-            else:
-                logger.error(f"Login failed after {max_retries} attempts: {e}")
-                raise
   
   ## Login decorator (simplified)
   def login(func):    
