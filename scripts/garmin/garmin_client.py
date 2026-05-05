@@ -7,6 +7,7 @@ import garth
 
 
 from .garmin_url_dict import GARMIN_URL_DICT
+from ..config import GARMIN_TOKENS_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -18,8 +19,9 @@ class GarminClient:
         self.password = password
         self.garthClient = garth
         self.newestNum = int(newest_num)
+        self.tokens_dir = GARMIN_TOKENS_DIR
         self.headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.88 Safari/537.36",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
             "origin": GARMIN_URL_DICT.get("SSO_URL_ORIGIN"),
             "nk": "NT"
         }
@@ -31,12 +33,25 @@ class GarminClient:
          garth.client.username
       except Exception:
         logger.warning("Garmin is not logging in or the token has expired.")
+        
+        # Créer le répertoire de tokens s'il n'existe pas
+        if not os.path.exists(self.tokens_dir):
+          os.makedirs(self.tokens_dir, exist_ok=True)
+        
+        # Configurer le domaine
         if self.auth_domain and str(self.auth_domain).upper() == "CN":
           self.garthClient.configure(domain="garmin.cn")
-        self.garthClient.login(self.email, self.password)
         
-        # del self.garthClient.sess.headers['User-Agent']
-        del self.garthClient.client.sess.headers['User-Agent']
+        # Tenter de reprendre une session existante
+        try:
+          self.garthClient.resume(self.tokens_dir)
+          logger.info("Garmin tokens restored from previous session.")
+        except Exception as e:
+          logger.info(f"Could not resume session: {e}. Logging in with credentials.")
+          self.garthClient.login(self.email, self.password)
+          # Sauvegarder les tokens pour les prochaines exécutions
+          self.garthClient.save(self.tokens_dir)
+          logger.info("Garmin tokens saved for future sessions.")
 
       return func(self, *args, **kwargs)
     return ware
