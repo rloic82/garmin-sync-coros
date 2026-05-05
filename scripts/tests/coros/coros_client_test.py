@@ -1,8 +1,8 @@
 import os
 import sys 
 
-CURRENT_DIR = os.path.split(os.path.abspath(__file__))[0]  # 当前目录
-config_path = CURRENT_DIR.rsplit('/', 1)[0]  # 上三级目录
+CURRENT_DIR = os.path.split(os.path.abspath(__file__))[0]  # Current directory
+config_path = CURRENT_DIR.rsplit('/', 1)[0]  # Parent directory
 sys.path.append(config_path)
 
 from scripts.coros.coros_client import CorosClient
@@ -24,19 +24,19 @@ GARMIN_AUTH_DOMAIN = ""
 garminClient = GarminClient(GARMIN_EMAIL, GARMIN_PASSWORD, GARMIN_AUTH_DOMAIN)
 
 def init(coros_db):
-    ## 判断RQ数据库是否存在
+    ## Check if database exists
     print(os.path.join(DB_DIR, coros_db.coros_db_name))
     if not os.path.exists(os.path.join(DB_DIR, coros_db.coros_db_name)):
-        ## 初始化建表
+        ## Initialize database tables
         coros_db.initDB()
     if not os.path.exists(COROS_FIT_DIR):
         os.mkdir(COROS_FIT_DIR)
 
- ## db 名称
+ ## Database name
 db_name = "coros.db"
-## 建立DB链接
+## Create DB connection
 coros_db = CorosDB(db_name)
-## 初始化DB位置和下载文件位置
+## Initialize database location and download file location
 init(coros_db)
 
 all_activities = corosClient.getAllActivities()

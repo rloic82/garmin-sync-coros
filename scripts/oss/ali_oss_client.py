@@ -30,7 +30,7 @@ class AliOssClient:
 
         sts_token_response = json.loads(response.data)
         if sts_token_response["code"] != 200:
-            raise StsTokenError("获取阿里云OSS STS Token异常")
+            raise StsTokenError("Failed to get AliCloud OSS STS Token")
         credentials = sts_token_response["data"]["credentials"]
         credients_json = decode(credentials)
 
@@ -50,20 +50,20 @@ class AliOssClient:
         print(key)
         init_multipart_upload_result = self.client.init_multipart_upload(key)
         if init_multipart_upload_result.status != 200:
-            raise AliOssError("初始化阿里云分片上传异常")
+            raise AliOssError("Failed to initialize AliCloud multipart upload")
         upload_id = init_multipart_upload_result.upload_id
         total_size = os.path.getsize(filePath)
-        # determine_part_size方法用于确定分片大小。
+        # The determine_part_size method is used to determine the part size.
         part_size = determine_part_size(total_size, preferred_size=1024 * 1024)
         parts = []
 
-        # 逐个上传分片。
+        # Upload parts one by one.
         with open(filePath, 'rb') as fileobj:
             part_number = 1
             offset = 0
             while offset < total_size:
                 num_to_upload = min(part_size, total_size - offset)
-                # 调用SizedFileAdapter(fileobj, size)方法会生成一个新的文件对象，重新计算起始追加位置。
+                # SizedFileAdapter(fileobj, size) creates a new file object and recalculates the starting append position.
                 result = self.client.upload_part(key, upload_id, part_number,
                                             SizedFileAdapter(fileobj, num_to_upload))
                 parts.append(PartInfo(part_number, result.etag))
@@ -71,10 +71,10 @@ class AliOssClient:
                 offset += num_to_upload
                 part_number += 1
 
-        # 完成分片上传。
-        # 如需在完成分片上传时设置相关Headers，请参考如下示例代码。
+        # Complete the multipart upload.
+        # To set relevant Headers when completing the multipart upload, refer to the following example code.
         headers = dict()
-        # 设置文件访问权限ACL。此处设置为OBJECT_ACL_PRIVATE，表示私有权限。
+        # Set file access permission ACL. Here it is set to OBJECT_ACL_PRIVATE, indicating private permission.
         # headers["x-oss-object-acl"] = oss2.OBJECT_ACL_PRIVATE
         r = self.client.complete_multipart_upload(key, upload_id, parts, headers=headers)
         return key

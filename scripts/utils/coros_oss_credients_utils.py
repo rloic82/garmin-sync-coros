@@ -5,12 +5,12 @@ import json
 
 
 def decode(credient):
-  salt = "9y78gpoERW4lBNYL"  # 盐值
+  salt = "9y78gpoERW4lBNYL"  # Salt value
 
-  # 第一步：去除盐（salt）部分
+  # Step 1: Remove the salt
   encode_credient = credient.replace(salt, '')
 
-  # 第二步：Base64 解码
-  credients = base64.b64decode(encode_credient).decode('utf-8')  # 解码后的内容转成 utf-8 字符串
+  # Step 2: Base64 decode
+  credients = base64.b64decode(encode_credient).decode('utf-8')  # Decode to utf-8 string
 
   return json.loads(credients)

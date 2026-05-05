@@ -6,14 +6,14 @@ from config import DB_DIR
 class GarminDB:
     
     def __init__(self, garmin_db_name):
-        ## Garmin数据库
+        ## Garmin database
         self._garmin_db_name = garmin_db_name
 
     @property
     def garmin_db_name(self):
         return self._garmin_db_name
 
-     ## 保存Stryd运动信息
+     ## Save activity information
     def saveActivity(self, id):
         exists_select_sql = 'SELECT * FROM garmin_activity WHERE activity_id = ?'
         with SqliteDB(self._garmin_db_name) as db:

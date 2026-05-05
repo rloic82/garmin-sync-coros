@@ -2,15 +2,15 @@ import os
 import sys 
 import logging
 
-# Configuration du logging
+# Logging configuration
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 
-CURRENT_DIR = os.path.split(os.path.abspath(__file__))[0]  # 当前目录
-config_path = CURRENT_DIR.rsplit('/', 1)[0]  # 上三级目录
+CURRENT_DIR = os.path.split(os.path.abspath(__file__))[0]  # Current directory
+config_path = CURRENT_DIR.rsplit('/', 1)[0]  # Parent directory
 sys.path.append(config_path)
 
 from config import DB_DIR, GARMIN_FIT_DIR
@@ -32,11 +32,11 @@ SYNC_CONFIG = {
 
 
 def init(coros_db):
-    ## 判断RQ数据库是否存在
+    ## Check if database exists
     db_path = os.path.join(DB_DIR, coros_db.garmin_db_name)
     logger.info(f"Database path: {db_path}")
     if not os.path.exists(db_path):
-        ## 初始化建表
+        ## Initialize database tables
         logger.info("Initializing database...")
         coros_db.initDB()
     if not os.path.exists(GARMIN_FIT_DIR):
@@ -44,19 +44,19 @@ def init(coros_db):
         os.mkdir(GARMIN_FIT_DIR)
 
 if __name__ == "__main__":
-   logger.info("=== Starting Garmin to Coros Sync ===")
-   
-   # 首先读取 面板变量 或者 github action 运行变量
+  logger.info("=== Starting Garmin to Coros Sync ===")
+  
+  # Read panel variables or GitHub Action environment variables
   for k in SYNC_CONFIG:
       if os.getenv(k):
           v = os.getenv(k)
           SYNC_CONFIG[k] = v
   
-  ## db 名称
+  ## Database name
   db_name = "garmin.db"
-  ## 建立DB链接
+  ## Create DB connection
   garmin_db = GarminDB(db_name)
-  ## 初始化DB位置和下载文件位置
+  ## Initialize database location and download file location
   init(garmin_db)
 
   GARMIN_EMAIL = SYNC_CONFIG["GARMIN_EMAIL"]
@@ -66,6 +66,9 @@ if __name__ == "__main__":
   logger.info(f"Garmin domain: {GARMIN_AUTH_DOMAIN}")
     
   garminClient = GarminClient(GARMIN_EMAIL, GARMIN_PASSWORD, GARMIN_AUTH_DOMAIN, GARMIN_NEWEST_NUM)
+  # Immediate login to detect errors early
+  garminClient._ensure_login()
+  logger.info("Garmin client authenticated successfully")
 
   COROS_EMAIL = SYNC_CONFIG["COROS_EMAIL"]
   COROS_PASSWORD = SYNC_CONFIG["COROS_PASSWORD"]
@@ -120,7 +123,7 @@ if __name__ == "__main__":
   for un_sync_info in file_path_list:
     try:
       client = None
-      ## 中国区使用阿里云OSS
+      ## Use AliCloud OSS for China region
       if corosClient.regionId == 2:
          logger.info("Using AliCloud OSS")
          client = AliOssClient()

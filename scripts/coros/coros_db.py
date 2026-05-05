@@ -6,14 +6,14 @@ from config import DB_DIR
 class CorosDB:
     
     def __init__(self, coros_db_name):
-        ## 高驰数据库
+        ## Coros database
         self._coros_db_name = coros_db_name
 
     @property
     def coros_db_name(self):
         return self._coros_db_name
 
-     ## 保存Stryd运动信息
+     ## Save activity information
     def saveActivity(self, id, sport_type):
         exists_select_sql = 'SELECT * FROM coros_activity WHERE activity_id = ?'
         with SqliteDB(self._coros_db_name) as db:

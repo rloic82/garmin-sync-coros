@@ -11,7 +11,7 @@ print(corosClient.userId)
 client = AliOssClient()
 file_path = 'garmin-fit/18479948923.zip'
 import os
-size = os.path.getsize(file_path) # 文件路径及文件名
+size = os.path.getsize(file_path) # File path and filename
 print(size)
 oss_obj = client.multipart_upload(file_path, f"{corosClient.userId}/{calculate_md5_file(file_path)}.zip")
 upload_result = corosClient.uploadActivity(f"fit_zip/{corosClient.userId}/{calculate_md5_file(file_path)}.zip", calculate_md5_file(file_path), "17979659691.zip", size)

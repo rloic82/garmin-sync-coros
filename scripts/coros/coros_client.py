@@ -20,14 +20,14 @@ class CorosClient:
         self.regionId = None
         self.teamapi = None
     
-    ## 登录接口
+    ## Login interface
     def login(self):
         ## default use com login url
         login_url = "https://teamcnapi.coros.com/account/login"
 
         login_data = {
             "account": self.email,
-            "pwd": hashlib.md5(self.password.encode()).hexdigest(), ##MD5加密密码
+            "pwd": hashlib.md5(self.password.encode()).hexdigest(), ## MD5 encrypted password
             "accountType":2,
         }
         headers = {
@@ -54,9 +54,9 @@ class CorosClient:
         self.regionId = regionId
         self.teamapi = REGIONCONFIG[self.regionId]['teamapi']
 
-    ## 上传运动
+    ## Upload activity
     def uploadActivity(self, oss_object, md5, fileName, size):
-        ## 判断Token 是否为空
+        ## Check if token is empty
         if self.accessToken == None:
             self.login()
 
@@ -106,7 +106,7 @@ class CorosClient:
           return response
         except Exception as err:
             exit() 
-     ## 获取所有运动
+     ## Get all activities
     def getAllActivities(self): 
       all_activities = []
       size = 200
@@ -123,7 +123,7 @@ class CorosClient:
 
     def downloadActivitie(self, id, sport_type):
        self.checkToken()
-       ## 文件下载链接
+       ## File download URL
        get_activity_download_url = f"{self.teamapi}/activity/detail/download?labelId={id}&sportType={sport_type}&fileType=4"
        headers = {
           "Accept":       "application/json, text/plain, */*",
@@ -142,9 +142,9 @@ class CorosClient:
           headers=headers
       )
 
-    ## 检查token是否有效
+    ## Check if token is valid
     def checkToken(self):
-        ## 判断Token 是否为空
+        ## Check if token is empty
         if self.accessToken == None:
             self.login()
 class CorosLoginError(Exception):

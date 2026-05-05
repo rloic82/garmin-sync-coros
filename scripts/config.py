@@ -2,7 +2,7 @@ import os
 
 SYS_CONFIG = {}
 
-# 首先读取 面板变量 或者 github action 运行变量
+# Read panel variables or GitHub Action environment variables
 for k in SYS_CONFIG:
     if os.getenv(k):
         v = os.getenv(k)

@@ -46,15 +46,15 @@ class AwsOssClient:
         )
 
   def multipart_upload(self, filePath, fileName):
-      # 配置上传选项
+      # Configure upload options
       config = TransferConfig(
-          multipart_threshold=1024 * 1024 * 5,  # 分片上传的阈值（5MB）
-          max_concurrency=4,                   # 并发数
-          multipart_chunksize=1024 * 1024 * 5,  # 分片大小（5MB）
-          use_threads=True                     # 使用多线程
+          multipart_threshold=1024 * 1024 * 5,  # Multipart upload threshold (5MB)
+          max_concurrency=4,                   # Concurrency
+          multipart_chunksize=1024 * 1024 * 5,  # Part size (5MB)
+          use_threads=True                     # Use multi-threading
       )
 
-      # 执行上传
+      # Execute upload
       try:
           self.client.upload_file(
               filePath,
