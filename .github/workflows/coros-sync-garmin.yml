@@ -53,10 +53,10 @@ jobs:
         if: env.RUN_TYPE == 'coros_to_garmin'
         run: |
           python scripts/coros/coros_sync_garmin.py
-      - name: Push new cookie
+      - name: Push new data (tokens + activities)
         run: |
           git config --local user.email "${{ env.GITHUB_EMAIL }}"
           git config --local user.name "${{ env.GITHUB_NAME }}"
           git add .
-          git commit -m 'faet(sync): new upload activity' || echo "nothing to commit"
+          git commit -m 'sync: update activities and authentication tokens' || echo "nothing to commit"
           git push || echo "nothing to push"

@@ -1,7 +1,9 @@
 import logging
 import os
+import time
 from enum import Enum, auto
 import requests
+from requests.exceptions import RetryError
 
 import garth
 
@@ -33,12 +35,12 @@ class GarminClient:
     if self._is_logged_in:
         return
     
+    # Check if already authenticated
     try:
-        # Check if already logged in
-        garth.client.username
-        self._is_logged_in = True
-        logger.info("Garmin client already authenticated.")
-        return
+        if hasattr(self.garthClient, 'oauth2_token') and self.garthClient.oauth2_token:
+            self._is_logged_in = True
+            logger.info("Garmin client already authenticated.")
+            return
     except Exception:
         pass
     
@@ -47,23 +49,73 @@ class GarminClient:
     # Create tokens directory if it doesn't exist
     if not os.path.exists(self.tokens_dir):
         os.makedirs(self.tokens_dir, exist_ok=True)
+        logger.info(f"Created tokens directory: {self.tokens_dir}")
     
     # Configure domain
     if self.auth_domain and str(self.auth_domain).upper() == "CN":
         self.garthClient.configure(domain="garmin.cn")
     
-    # Try to resume existing session
-    try:
-        self.garthClient.resume(self.tokens_dir)
-        logger.info("Garmin tokens restored from previous session.")
-        self._is_logged_in = True
-    except Exception as e:
-        logger.info(f"Could not resume session: {e}. Logging in with credentials.")
-        self.garthClient.login(self.email, self.password)
-        # Save tokens for future executions
-        self.garthClient.save(self.tokens_dir)
-        logger.info("Garmin tokens saved for future sessions.")
-        self._is_logged_in = True
+    # Try to resume existing session first (only if token files exist)
+    token_file = os.path.join(self.tokens_dir, "oauth1_token.json")
+    if os.path.exists(token_file):
+        try:
+            self.garthClient.resume(self.tokens_dir)
+            logger.info("Garmin tokens restored from previous session.")
+            self._is_logged_in = True
+            return
+        except Exception as e:
+            logger.warning(f"Could not resume session: {e}. Will login with credentials.")
+    else:
+        logger.info("No existing tokens found. Will login with credentials.")
+    
+    # Login with credentials with retry and exponential backoff
+    max_retries = 4  # 4 attempts total
+    base_delay = 10  # Start with 10 seconds
+    
+    for attempt in range(max_retries):
+        try:
+            logger.info(f"Login attempt {attempt + 1}/{max_retries}...")
+            self.garthClient.login(self.email, self.password)
+            # Save tokens for future executions
+            self.garthClient.save(self.tokens_dir)
+            logger.info("✓ Garmin authentication successful!")
+            logger.info(f"✓ Tokens saved to: {self.tokens_dir}")
+            logger.info("✓ Future runs will use these tokens (no login needed)")
+            self._is_logged_in = True
+            return
+        except RetryError as e:
+            if "429" in str(e) or "too many" in str(e).lower():
+                if attempt < max_retries - 1:
+                    delay = base_delay * (2 ** attempt)  # Exponential backoff: 10s, 20s, 40s
+                    logger.warning(f"⚠ Rate limit hit (429). Waiting {delay} seconds before retry...")
+                    logger.info(f"   (Garmin blocks frequent authentication attempts)")
+                    time.sleep(delay)
+                else:
+                    logger.error("✗ Max retries reached. Garmin rate limit exceeded.")
+                    logger.error("✗ SOLUTION: Wait 10-15 minutes before trying again.")
+                    logger.error("✗ See TROUBLESHOOTING.md for detailed help.")
+                    raise Exception(
+                        "Garmin authentication failed: Rate limit exceeded (429). "
+                        "Garmin blocks frequent authentication attempts. "
+                        "Wait 10-15 minutes before trying again. "
+                        "After first successful authentication, tokens will be saved and reused."
+                    ) from e
+            else:
+                raise
+        except Exception as e:
+            if attempt < max_retries - 1:
+                delay = base_delay * (2 ** attempt)
+                logger.warning(f"⚠ Login failed: {e}. Retrying in {delay} seconds...")
+                time.sleep(delay)
+            else:
+                logger.error(f"✗ Login failed after {max_retries} attempts: {e}")
+                raise
+                delay = base_delay * (2 ** attempt)
+                logger.warning(f"Login failed: {e}. Retrying in {delay} seconds...")
+                time.sleep(delay)
+            else:
+                logger.error(f"Login failed after {max_retries} attempts: {e}")
+                raise
   
   ## Login decorator (simplified)
   def login(func):    
